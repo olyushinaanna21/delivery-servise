@@ -1,34 +1,6 @@
 from pydantic import BaseModel, field_validator
 from typing import List, Optional
-
-
-#функция проверки формата времени по длине
-def check_time_format(time_str: str) -> bool:
-    if len(time_str) != 11:
-        return False
-
-    #позиции разделителей "09:00-18:00"
-    if time_str[2] != ":" or time_str[5] != "-" or time_str[8] != ":":
-        return False
-
-    #символы - цифры + нужные места
-    if not (time_str[0:2].isdigit() and time_str[3:5].isdigit() and
-            time_str[6:8].isdigit() and time_str[9:11].isdigit()):
-        return False
-
-    #проверка часов и минут
-    start_hour = int(time_str[0:2])
-    start_min = int(time_str[3:5])
-    end_hour = int(time_str[6:8])
-    end_min = int(time_str[9:11])
-
-    if start_hour > 23 or end_hour > 23:
-        return False
-    if start_min > 59 or end_min > 59:
-        return False
-
-    return True
-
+from Fuctions.helpFunc import check_time_format
 
 
 #создание модели курьера
