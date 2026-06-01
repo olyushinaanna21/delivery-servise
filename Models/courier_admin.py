@@ -2,15 +2,13 @@ from pydantic import BaseModel, field_validator
 from typing import List, Optional
 from Fuctions.helpFunc import check_time_format
 
-
-#создание модели курьера
+#модель создания курьера
 class CourierItem(BaseModel):
     courier_id: int
     courier_type: str
     regions: List[int]
     working_hours: List[str]
 
-    #проверка айди курьера больше 0
     @field_validator("courier_id")
     @classmethod
     def check_id_positive(cls, v: int) -> int:
@@ -18,7 +16,6 @@ class CourierItem(BaseModel):
             raise ValueError("courier_id должен быть положительным числом")
         return v
 
-    #проверка типа курьера пеший, велик или машина
     @field_validator("courier_type")
     @classmethod
     def check_courier_type(cls, v: str) -> str:
@@ -26,7 +23,6 @@ class CourierItem(BaseModel):
             raise ValueError("courier_type должен быть foot, bike или car")
         return v
 
-    #проверка регион больше 0
     @field_validator("regions")
     @classmethod
     def check_regions(cls, v: List[int]) -> List[int]:
@@ -35,7 +31,6 @@ class CourierItem(BaseModel):
                 raise ValueError("ID региона должен быть положительным числом")
         return v
 
-    #проверка формата времени работы
     @field_validator("working_hours")
     @classmethod
     def check_working_hours(cls, v: List[str]) -> List[str]:
@@ -44,19 +39,14 @@ class CourierItem(BaseModel):
                 raise ValueError(f"Неверный формат времени: {hours}")
         return v
 
-    #проверка грузоподьемности, вычисляемое поле
     @property
     def max_load(self) -> int:
         loads = {"foot": 10, "bike": 15, "car": 50}
         return loads[self.courier_type]
 
-
-
-
+#запрос на создание курьера
 class CouriersPostRequest(BaseModel):
     data: List[CourierItem]
-
-
 
 #обновление курьера
 class CourierUpdateRequest(BaseModel):
@@ -64,7 +54,6 @@ class CourierUpdateRequest(BaseModel):
     regions: Optional[List[int]] = None
     working_hours: Optional[List[str]] = None
 
-    #тип курьера
     @field_validator("courier_type")
     @classmethod
     def check_courier_type(cls, v: Optional[str]) -> Optional[str]:
@@ -72,7 +61,6 @@ class CourierUpdateRequest(BaseModel):
             raise ValueError("courier_type должен быть foot, bike или car")
         return v
 
-    #регион
     @field_validator("regions")
     @classmethod
     def check_regions(cls, v: Optional[List[int]]) -> Optional[List[int]]:
@@ -82,7 +70,6 @@ class CourierUpdateRequest(BaseModel):
                     raise ValueError("ID региона должен быть положительным числом")
         return v
 
-    #время работы
     @field_validator("working_hours")
     @classmethod
     def check_working_hours(cls, v: Optional[List[str]]) -> Optional[List[str]]:
@@ -92,9 +79,7 @@ class CourierUpdateRequest(BaseModel):
                     raise ValueError(f"Неверный формат времени: {hours}")
         return v
 
-
-
-#модель ответа
+#информация о курьере
 class CourierResponse(BaseModel):
     courier_id: int
     courier_type: str
