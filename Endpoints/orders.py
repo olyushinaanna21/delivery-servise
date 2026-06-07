@@ -10,8 +10,6 @@ from DB.DBconnect import get_db
 from DB.tabels import OrderDB, OrderItemDB, CartDB, ProductDB
 from datetime import datetime
 
-
-
 router = APIRouter(prefix="/orders", tags=["Заказы"])
 
 
@@ -36,6 +34,9 @@ def checkout(request: CheckoutRequest, current_user = Depends(require_customer),
         if product:
             total_weight += product.weight * item.quantity
             total_price += product.price * item.quantity
+
+    total_weight = round(total_weight, 2)
+    total_price = round(total_price, 2)
 
     #создаём заказ в бд
     order_number = db.query(OrderDB).count() + 1

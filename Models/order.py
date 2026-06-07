@@ -1,6 +1,6 @@
 from pydantic import BaseModel, field_validator
 from typing import List, Optional
-from Fuctions.helpFunc import check_time_format, round_weight
+from Functions.helpFunc import check_time_format, round_weight
 
 #модель заказа
 class OrderItem(BaseModel):

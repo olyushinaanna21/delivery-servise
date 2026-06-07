@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+import uvicorn
+from fastapi.middleware.cors import CORSMiddleware
 from Endpoints.authentics import router as auth_router
 from Endpoints.users import router as users_router
 from Endpoints.courier import router as courier_router
@@ -12,7 +14,17 @@ from Endpoints.users_admin import router as admin_users_router
 
 app = FastAPI()
 
-# Подключаем все роутеры
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+#подключаем все роутеры
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(courier_router)
@@ -27,3 +39,12 @@ app.include_router(admin_users_router)
 @app.get("/")
 def root():
     return {"message": "Доставка посылок"}
+
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8080,
+        reload=True
+    )

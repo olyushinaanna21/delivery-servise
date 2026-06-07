@@ -52,8 +52,14 @@ def get_user_by_id(user_id: int, admin=Depends(require_admin), db: Session = Dep
 #изменить роль пользователя(админ)
 @router.patch("/{user_id}/role")
 def change_role(user_id: int, role: str, admin=Depends(require_admin), db: Session = Depends(get_db)):
+
+    if user_id == admin["user_id"]:
+        raise HTTPException(400, "Нельзя изменить свою собственную роль")
+
+
     if role not in ["customer", "admin", "courier"]:
         raise HTTPException(400, "Неверная роль")
+
 
     user = db.query(UserDB).filter(UserDB.id_user == user_id).first()
     if not user:

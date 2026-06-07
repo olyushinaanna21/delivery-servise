@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from auth import require_admin
 from DB.DBconnect import get_db
-from DB.tabels import ProductDB
+from DB.tabels import ProductDB, OrderItemDB, CartDB
 from Models.product import Product
 
 router = APIRouter(prefix="/admin/products", tags=["Управление товарами"])
@@ -40,13 +40,12 @@ def create_product(product: Product,admin=Depends(require_admin),db: Session = D
 
 #редактировать товар(админ)
 @router.patch("/{product_id}")
-def update_product(product_id: int, update_data: dict, admin=Depends(require_admin),  db: Session = Depends(get_db)):
-    #ищем товар в бд
+def update_product(product_id: int, update_data: dict, admin=Depends(require_admin), db: Session = Depends(get_db)):
     product = db.query(ProductDB).filter(ProductDB.id_product == product_id).first()
     if not product:
         raise HTTPException(404, "Товар не найден")
 
-    #обновляем только переданные поля
+    # обновляем поля
     if "name" in update_data:
         product.name = update_data["name"]
     if "description" in update_data:
@@ -61,8 +60,21 @@ def update_product(product_id: int, update_data: dict, admin=Depends(require_adm
         product.category = update_data["category"]
 
     db.commit()
+    db.refresh(product)
 
-    return {"message": "Товар обновлен", "product": product}
+    # Возвращаем словарь
+    return {
+        "message": "Товар обновлен",
+        "product": {
+            "id": product.id_product,
+            "name": product.name,
+            "description": product.description,
+            "price": product.price,
+            "weight": product.weight,
+            "image_url": product.image_url,
+            "category": product.category
+        }
+    }
 
 
 #удалить товар(админ)
@@ -71,6 +83,14 @@ def delete_product(product_id: int, admin=Depends(require_admin), db: Session = 
     product = db.query(ProductDB).filter(ProductDB.id_product == product_id).first()
     if not product:
         raise HTTPException(404, "Товар не найден")
+
+    order_items = db.query(OrderItemDB).filter(OrderItemDB.id_product == product_id).first()
+    if order_items:
+        raise HTTPException(400, "Нельзя удалить товар, который уже есть в заказах")
+
+    cart_items = db.query(CartDB).filter(CartDB.id_product == product_id).first()
+    if cart_items:
+        raise HTTPException(400, "Нельзя удалить товар, который находится в чьей-то корзине")
 
     db.delete(product)
     db.commit()

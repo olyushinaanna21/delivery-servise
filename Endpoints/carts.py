@@ -3,7 +3,6 @@
 
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from Models.cart import CartItem, Cart
 from auth import require_customer
 from DB.DBconnect import get_db
 from DB.tabels import CartDB, ProductDB

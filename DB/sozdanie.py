@@ -1,18 +1,17 @@
-from DBconnect import engine, Base
-from DB.tabels import UserDB, CourierDB, ProductDB, OrderDB, OrderItemDB, CartDB
+from DB.DBconnect import engine, Base
+import DB.tabels  # ← добавь этот импорт (он регистрирует модели)
 from sqlalchemy import text
 
-
-#добавление таблиц в бд
 def create_tables():
+    print("Создаём таблицы...")
     Base.metadata.create_all(bind=engine)
+    print("Таблицы созданы")
 
-
-#добавляем админа статически
 def add_admin():
-    from DBconnect import SessionLocal
+    from DB.DBconnect import SessionLocal
     db = SessionLocal()
     try:
+        # Проверяем существование таблицы и наличие админа
         result = db.execute(text("SELECT * FROM users WHERE role = 'admin'")).fetchone()
         if not result:
             db.execute(text("""
@@ -24,12 +23,10 @@ def add_admin():
         else:
             print("админ уже существует")
     except Exception as e:
-        print(f"ошибка при добавлении админа")
+        print(f"ошибка при добавлении админа: {e}")
         db.rollback()
     finally:
         db.close()
-
-
 
 if __name__ == "__main__":
     create_tables()

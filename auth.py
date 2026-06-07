@@ -5,7 +5,9 @@ from fastapi.security import APIKeyHeader
 import secrets
 import string
 
-API_KEYS = {} #в будущем бд
+API_KEYS = {"admin_key_123": {"role": "admin", "user_id": 1, "username": "admin"},
+    "test_customer_key_456": {"role": "customer", "user_id": 2, "username": "testcustomer"},
+    "courier_key_789": {"role": "courier", "user_id": 3, "username": "courier1"},} #в будущем бд
 
 
 #ищет в http аголовок апи токен, если его нет ошибка 403 (доступ запрещён)

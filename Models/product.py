@@ -1,12 +1,11 @@
 from pydantic import BaseModel
+from typing import Optional
 
-
-#моделька товара
 class Product(BaseModel):
-    id: int #айди
-    name: str #название
-    description: str #описание
-    price: float #цена
-    weight: float # вес в кг
-    image_url: str #ссылка на кратинку
-    category: str #категория товара
+    id: int
+    name: str
+    description: str
+    price: float
+    weight: float
+    image_url: Optional[str] = None
+    category: Optional[str] = None

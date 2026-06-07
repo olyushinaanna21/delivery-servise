@@ -1,3 +1,8 @@
+from sqlalchemy.orm import Session
+from DB.tabels import OrderDB
+from datetime import datetime
+
+
 # функция проверки формата времени по длине
 def check_time_format(time_str: str) -> bool:
     if len(time_str) != 11:
@@ -77,29 +82,31 @@ def is_order_compatible(order: dict, courier: dict) -> bool:
 
 
 #функция расчета заработка курьера(сумма*(500 * C))(foot=2, bike=5, car=9)
-def calculate_courier_earnings(courier_id: int, courier_type: str, orders_db: dict) -> int:
+def calculate_courier_earnings(courier_id: int, courier_type: str, db: Session) -> int:
     coeffs = {"foot": 2, "bike": 5, "car": 9}
-    coefficient = coeffs.get(courier_type, 2) #по умолч пеший
+    coefficient = coeffs.get(courier_type, 2)
 
-    earnings = 0
+    #считаем завершённые заказы курьера в бд
+    completed_count = db.query(OrderDB).filter(OrderDB.id_courier == courier_id,OrderDB.status == "completed").count()
 
-    for order in orders_db.values():
-        #только завершенные заказы
-        if (order.get("status") == "completed" and
-                order.get("assigned_courier_id") == courier_id):
-            earnings += 500 * coefficient
-
-    return earnings
+    return completed_count * 500 * coefficient
 
 
 
 
 #функция расчета времени доставки (в сек)
-def calculate_delivery_time(assign_time: str, complete_time: str) -> int:
+def calculate_delivery_time(assign_time, complete_time) -> int:
     from datetime import datetime
 
-    assign_dt = datetime.fromisoformat(assign_time)
-    complete_dt = datetime.fromisoformat(complete_time)
+    if isinstance(assign_time, str):
+        assign_dt = datetime.fromisoformat(assign_time)
+    else:
+        assign_dt = assign_time
+
+    if isinstance(complete_time, str):
+        complete_dt = datetime.fromisoformat(complete_time)
+    else:
+        complete_dt = complete_time
 
     #расчет разницы
     delta = complete_dt - assign_dt
@@ -110,39 +117,33 @@ def calculate_delivery_time(assign_time: str, complete_time: str) -> int:
 
 #функция расчета рейтинга курьера ((3600 - min(t, 3600)) / 3600 * 5)
 #t -мин сред время доставки по районам (в сек)
-def calculate_courier_rating(courier_id: int, orders_db: dict) -> float | None:
-    #список завершенных курьером заказов
-    completed_orders = []
-    for order in orders_db.values():
-        if (order.get("status") == "completed" and
-                order.get("assigned_courier_id") == courier_id and
-                order.get("assign_time") and
-                order.get("complete_time")):
-            completed_orders.append(order)
-
+def calculate_courier_rating(courier_id: int, db: Session) -> float:
+    # получаем завершённые заказы из бд (все заказы курьера с пометкой комлитед)
+    completed_orders = db.query(OrderDB).filter(
+        OrderDB.id_courier == courier_id,
+        OrderDB.status == "completed",
+        OrderDB.assign_time.isnot(None),
+        OrderDB.complete_time.isnot(None)
+    ).order_by(OrderDB.assign_time).all()
 
     if not completed_orders:
-        return None
+        return 0.0
 
-    #сортировка по времени назначения
-    completed_orders.sort(key=lambda x: x.get("assign_time", ""))
-
-    #групирровка времени доставки по районам
+    # группировка времени доставки по районам
     region_times = {}
-    previous_complete_time = None
+    previous_complete_time = None#время завершения предыдущего заказа
 
     for order in completed_orders:
-        region = order["region"]
-        assign_time = order["assign_time"]
-        complete_time = order["complete_time"]
+        region = order.region
+        assign_time = order.assign_time
+        complete_time = order.complete_time
 
-        #время доставки первого заказа от назнач до заверш
         if previous_complete_time is None:
+            # время доставки первого заказа
             delivery_time = calculate_delivery_time(assign_time, complete_time)
         else:
-            #время между предыдущим заверешнием и начало следующего
+            # время между завершением предыдущего и текущего
             delivery_time = calculate_delivery_time(previous_complete_time, complete_time)
-
 
         if region not in region_times:
             region_times[region] = []
@@ -150,68 +151,27 @@ def calculate_courier_rating(courier_id: int, orders_db: dict) -> float | None:
 
         previous_complete_time = complete_time
 
-    #вычисление среднего времени по каждому району
+    # вычисление среднего времени по каждому району
     region_averages = []
     for times in region_times.values():
         if times:
-            avg = sum(times) / len(times)
-            region_averages.append(avg)
+            region_averages.append(sum(times) / len(times))
 
     if not region_averages:
-        return None
+        return 0.0
 
     t = min(region_averages)
 
-    #рассчитываем рейтинг
+    # рассчитываем рейтинг
     rating = (3600 - min(t, 3600)) / 3600 * 5
     rating = round(rating, 2)
 
     return rating
 
 
-
-
 #округление веса до 2 знаков
 def round_weight(weight: float) -> float:
     return round(weight, 2)
-
-
-
-
-#функция получения списка всех доступных заказов (статсу авелибл)
-def get_available_orders(orders_db: dict) -> list:
-    result = []
-    for order in orders_db.values():
-        if order.get("status") == "available":
-            result.append(order)
-    return result
-
-
-
-#функция получения назначенных, но не завершенных заказов курьера
-def get_courier_assigned_orders(courier_id: int, orders_db: dict) -> list:
-    result = []
-    for order in orders_db.values():
-        if order.get("assigned_courier_id") != courier_id:
-            continue
-        if order.get("status") != "assigned":
-            continue
-        result.append(order)
-    return result
-
-
-
-
-#фильтрация заказов по весу, району, времени
-def filter_compatible_orders(orders: list, courier: dict) -> list:
-    compatible = []
-    for order in orders:
-        if is_order_compatible(order, courier):
-            compatible.append(order)
-    return compatible
-
-
-
 
 
 #фунцкция получает текущее время
