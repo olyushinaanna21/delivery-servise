@@ -108,6 +108,6 @@ class CartDB(Base):
     quantity = Column(Integer, nullable=False)
     added_at = Column(DateTime, default=datetime.now)
 
-    # Связи
+    #связи
     user = relationship("UserDB", back_populates="carts")
     product = relationship("ProductDB", back_populates="carts")

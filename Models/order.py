@@ -75,25 +75,6 @@ class CompleteOrderRequest(BaseModel):
     complete_time: str
 
 
-#одель запроса на создание заказа
-# class OrdersPostRequest(BaseModel):
-#     data: List[OrderItem]
-
-#модель ответа при успешном создании
-# class OrdersPostResponse(BaseModel):
-#     orders: List[dict]
-
-
-#назначение заказа
-# class AssignOrdersRequest(BaseModel):
-#     courier_id: int
-#
-#завершение заказа
-# class CompleteOrderRequest(BaseModel):
-#     courier_id: int
-#     order_id: int
-#     complete_time: str
-
 
 
 

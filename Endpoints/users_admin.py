@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from auth import require_admin
 from DB.DBconnect import get_db
-from DB.tabels import UserDB, OrderDB
+from DB.tabels import UserDB, OrderDB, CourierDB
 
 
 router = APIRouter(prefix="/admin/users", tags=["Управление пользователями"])
@@ -52,18 +52,28 @@ def get_user_by_id(user_id: int, admin=Depends(require_admin), db: Session = Dep
 #изменить роль пользователя(админ)
 @router.patch("/{user_id}/role")
 def change_role(user_id: int, role: str, admin=Depends(require_admin), db: Session = Depends(get_db)):
-
     if user_id == admin["user_id"]:
-        raise HTTPException(400, "Нельзя изменить свою собственную роль")
-
+        raise HTTPException(400, "Нельзя изменить свою роль")
 
     if role not in ["customer", "admin", "courier"]:
         raise HTTPException(400, "Неверная роль")
 
-
     user = db.query(UserDB).filter(UserDB.id_user == user_id).first()
     if not user:
         raise HTTPException(404, "Пользователь не найден")
+
+    # Если меняем на курьера и профиля нет — создаём
+    if role == "courier":
+        existing_courier = db.query(CourierDB).filter(CourierDB.id_user == user_id).first()
+        if not existing_courier:
+            new_courier = CourierDB(
+                id_user=user_id,
+                courier_type="foot",
+                regions=[1],
+                working_hours=["09:00-18:00"],
+                max_load=10
+            )
+            db.add(new_courier)
 
     user.role = role
     db.commit()
