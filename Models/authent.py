@@ -38,3 +38,11 @@ class RegisterRequest(BaseModel):
         return v
 
 
+    @field_validator("region")
+    @classmethod
+    def validate_region(cls, v: int) -> int:
+        if v < 1 or v > 5:
+            raise ValueError("Регион должен быть от 1 до 5")
+        return v
+
+

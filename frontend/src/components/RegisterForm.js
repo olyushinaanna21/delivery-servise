@@ -25,6 +25,14 @@ function RegisterForm({ onRegisterSuccess, onSwitchToLogin }) {
     e.preventDefault(); //не перезагружем страницу и пустая ошибка
     setError('');
 
+
+     const regionNum = parseInt(formData.region);
+    if (formData.region && (regionNum < 1 || regionNum > 5)) {
+      setError('Регион должен быть от 1 до 5');
+      return;
+    }
+
+
     try {
       const response = await authAPI.register(formData);
       const data = response.data;

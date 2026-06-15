@@ -63,8 +63,8 @@ class CheckoutRequest(BaseModel):
 
     @field_validator("region")
     def check_region(cls, v):
-        if v <= 0:
-            raise ValueError("Регион должен быть > 0")
+        if v <= 0 or v > 5:
+            raise ValueError("Регион должен быть от 1 до 5")
         return v
 
 
